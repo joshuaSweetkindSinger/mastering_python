@@ -1,5 +1,6 @@
 """
-Functions related to finding primes
+Functions related to finding primes. This file does not contain examples. It just contains utility functions related to primality
+that are used by iterable_example.py in the iterables directory.
 """
 import math
 
