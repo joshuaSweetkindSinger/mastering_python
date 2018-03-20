@@ -7,9 +7,9 @@ import math
 
 def find_primes(n):
     """
-    Find and return all primes less than n.
+    Find and return all utils less than n.
     :param n: an integer.
-    :return: a list of primes.
+    :return: a list of utils.
     """
     return [i for i in range(n) if is_prime(i)]
 
