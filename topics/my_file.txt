@@ -1,1 +1,3 @@
 Hello, World!
+It's a beautiful today to learn python.
+Today I'm learning about context managers.
