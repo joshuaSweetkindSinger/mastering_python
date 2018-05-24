@@ -35,9 +35,11 @@ class DiseaseStageBase:
         setattr(cls, cls.get_categorization_method_name(category_name), f)
         return cls
 
-    @classmethod
-    def get_categorization_method_name(cls, category_name):
+
+    @staticmethod
+    def get_categorization_method_name(category_name):
         return '_categorize_' + category_name
+
 
     def get_categorizer(self, category_name):
         """
