@@ -7,9 +7,16 @@ categorization methods are all named _categorize_<category_name>, e.g., _categor
 and dynamically builds up the method to call as a string.
 """
 class Patient:
-    def __init__(self, age, systolic_blood_pressure):
+    def __init__(self,
+                 age,
+                 systolic_blood_pressure,
+                 fasting_blood_sugar,
+                 cholesterol
+                 ):
         self.age = age
         self.systolic_blood_pressure = systolic_blood_pressure
+        self.fasting_blood_sugar = fasting_blood_sugar
+        self.cholesterol = cholesterol
 
 
 class DiseaseStageBase:
@@ -31,33 +38,43 @@ class DiseaseStageBase:
         return self.get_categorizer(category_name)(patient)
 
 
-class HeartAttackStageA(DiseaseStageBase):
+class StrokeStageA(DiseaseStageBase):
+    risk_factors = {'age', 'blood_pressure', 'cholesterol'}
+
     def _categorize_age(self, patient):
         return 0 if patient.age < 50 else 1
 
     def _categorize_blood_pressure(self, patient):
         return 0 if patient.systolic_blood_pressure < 120 else 1
 
+    def _categorize_cholesterol(self, patient):
+        return 0 if patient.cholesterol < 200 else 1
+
 
 class DiabetesStageA(DiseaseStageBase):
-    def _categorize_age(self, patient):
-        return 0 if patient.age < 30 else 1
+    risk_factors = {'fasting_blood_sugar', 'blood_pressure'}
+
+    def _categorize_fasting_blood_sugar(self, patient):
+        return 0 if patient.fasting_blood_sugar < 100 else 1
 
     def _categorize_blood_pressure(self, patient):
         return 0 if patient.systolic_blood_pressure < 150 else 1
 
 
 def test():
-    patient = Patient(age = 40, systolic_blood_pressure = 130)
-    heart_attack_stage_a = HeartAttackStageA()
-    diabetes_stage_a = DiabetesStageA()
+    patient = Patient(age = 40,
+                      systolic_blood_pressure = 130,
+                      fasting_blood_sugar = 90,
+                      cholesterol = 210)
+    disease_stages = [StrokeStageA(), DiabetesStageA()]
 
-    # Here we run the tests. All the disease-stage objects are sent a categorize() message.
-    print("heart attack, age ->",            heart_attack_stage_a.categorize('age', patient))
-    print("diabetes, age ->",                diabetes_stage_a.categorize('age', patient))
-    print("heart attack, blood pressure ->", heart_attack_stage_a.categorize('blood_pressure', patient))
-    print("diabetes, blood pressure ->",     diabetes_stage_a.categorize('blood_pressure', patient))
-
+    for disease_stage in disease_stages:
+        print()
+        for risk_factor in disease_stage.risk_factors:
+            category = disease_stage.categorize(risk_factor, patient)
+            print("{disease_stage}, {risk_factor} -> {category}".format(disease_stage = disease_stage.__class__.__name__,
+                                                                        risk_factor = risk_factor,
+                                                                        category = category))
 
 if __name__ == '__main__':
     test()

@@ -13,58 +13,71 @@ case, a categorization method for category name 'age' has the name _categorize_a
 #                     Base Classes
 # =============================================================================
 class Patient:
-    def __init__(self, age, systolic_blood_pressure):
+    def __init__(self,
+                 age,
+                 systolic_blood_pressure,
+                 fasting_blood_sugar,
+                 cholesterol
+                 ):
         self.age = age
         self.systolic_blood_pressure = systolic_blood_pressure
+        self.fasting_blood_sugar = fasting_blood_sugar
+        self.cholesterol = cholesterol
 
 
 class DiseaseStageBase:
     @classmethod
-    def set_categorizer(cls, category_name, f):
+    def set_categorizer(cls, risk_factor, f):
         """
-        Set the function f to be the categorization method for class cls for the category named category_name.
+        Set the function f to be the categorization method for class cls for the risk factor
+        named risk_factor
 
         We do this by dynamically creating a method on cls with an algorithmically defined name
         and assigning f to be that method.
 
         :param cls: The class to which f should be added as a categorization method
-        :param category_name: The name of the category, e.g. 'age', 'blood_pressure'
+        :param risk_factor: The name of the risk factor, e.g. 'age', 'blood_pressure'
         :param f: The function to be added.
         :return: cls
         """
-        setattr(cls, cls.get_categorization_method_name(category_name), f)
+        # Create an empty risk factors set for this class if the risk factors set does not yet exist
+        if not hasattr(cls, 'risk_factors'):
+            cls.risk_factors = set()
+
+        cls.risk_factors.add(risk_factor)
+        setattr(cls, cls.get_categorization_method_name(risk_factor), f)
         return cls
 
 
     @staticmethod
-    def get_categorization_method_name(category_name):
-        return '_categorize_' + category_name
+    def get_categorization_method_name(risk_factor):
+        return '_categorize_' + risk_factor
 
 
-    def get_categorizer(self, category_name):
+    def get_categorizer(self, risk_factor):
         """
-        Return the method that categorizes the category named category_name for ourselves.
-        :param category_name: A category name, e.g. 'age', 'blood_pressure'
+        Return the method that categorizes the risk factor named risk_factor for ourselves.
+        :param risk_factor: A risk factor name, e.g. 'age', 'blood_pressure'
         :return: the method that should be used for categorization.
         """
-        return getattr(self, self.get_categorization_method_name(category_name))
+        return getattr(self, self.get_categorization_method_name(risk_factor))
 
 
     # This is the generic method that will handle categorization
     # for all subclasses.
-    def categorize(self, category_name, patient):
-        return self.get_categorizer(category_name)(patient)
+    def categorize(self, risk_factor, patient):
+        return self.get_categorizer(risk_factor)(patient)
 
 # =============================================================================
 #                     Decorator
 # =============================================================================
 # This is the magic. See use cases below.
-def categorizer(cls, category_name):
+def categorizer(cls, risk_factor):
     """
     This is a special-purpose decorator generator for subclasses of DiseaseStageBase.
     Declare the decorated function to be a categorization method for the specified class and category name.
     :param cls: The class to which the function should be added as a categorization method
-    :param category_name: the name of the category to which this method applies.
+    :param risk_factor: the name of the risk factor to which this method applies.
     :return: a dynamically generated decorator that adds f to the set of categorization methods.
              It doesn't wrap the decorated function but simply returns None.
              The name given to the original function will still be in the namespace, but its value will be None; it
@@ -76,27 +89,30 @@ def categorizer(cls, category_name):
         :param f: The function to be decorated. In this case, it is a categorization method.
         :return: None, but, as a side effect, add f to the set of categorization methods.
         """
-        cls.set_categorizer(category_name, f) # Add f as the categorizer for (cls, category_name)
+        cls.set_categorizer(risk_factor, f) # Add f as the categorizer for (cls, category_name)
         return None # Render useless the symbol to which the original function definition f was bound.
 
     return decorator
 
 # =============================================================================
-#                     Heart Attack Stage A
+#                     Stroke Stage A
 # =============================================================================
 # For the purposes of this demo, we initially define the disease-stage class as empty,
 # because it receives its functionality through the use of the @categorizer decorator.
-class HeartAttackStageA(DiseaseStageBase):
+class StrokeStageA(DiseaseStageBase):
     pass
 
-@categorizer(HeartAttackStageA, 'age')
-def _(self, patient):
+@categorizer(StrokeStageA, 'age')
+def _categorize_age(self, patient):
     return 0 if patient.age < 50 else 1
 
-@categorizer(HeartAttackStageA, 'blood_pressure')
-def _(self, patient):
+@categorizer(StrokeStageA, 'blood_pressure')
+def _categorize_blood_pressure(self, patient):
     return 0 if patient.systolic_blood_pressure < 120 else 1
 
+@categorizer(StrokeStageA, 'cholesterol')
+def _categorize_cholesterol(self, patient):
+    return 0 if patient.cholesterol < 200 else 1
 
 
 # =============================================================================
@@ -105,27 +121,29 @@ def _(self, patient):
 class DiabetesStageA(DiseaseStageBase):
     pass
 
-
-@categorizer(DiabetesStageA, 'age')
-def categorize_age(self, patient):
-    return 0 if patient.age < 30 else 1
+@categorizer(DiabetesStageA, 'fasting_blood_sugar')
+def _categorize_fasting_blood_sugar(self, patient):
+    return 0 if patient.fasting_blood_sugar < 100 else 1
 
 @categorizer(DiabetesStageA, 'blood_pressure')
-def categorize_blood_pressure(self, patient):
+def _categorize_blood_pressure(self, patient):
     return 0 if patient.systolic_blood_pressure < 150 else 1
 
 
 def test():
-    patient = Patient(age = 40, systolic_blood_pressure = 130)
-    heart_attack_stage_a = HeartAttackStageA()
-    diabetes_stage_a = DiabetesStageA()
+    patient = Patient(age = 40,
+                      systolic_blood_pressure = 130,
+                      fasting_blood_sugar = 90,
+                      cholesterol = 210)
+    disease_stages = [StrokeStageA(), DiabetesStageA()]
 
-    # Here we run the tests. All the disease-stage objects are sent a categorize() message.
-    print("heart attack, age ->",            heart_attack_stage_a.categorize('age', patient))
-    print("diabetes, age ->",                diabetes_stage_a.categorize('age', patient))
-    print("heart attack, blood pressure ->", heart_attack_stage_a.categorize('blood_pressure', patient))
-    print("diabetes, blood pressure ->",     diabetes_stage_a.categorize('blood_pressure', patient))
-
+    for disease_stage in disease_stages:
+        print()
+        for risk_factor in disease_stage.risk_factors:
+            category = disease_stage.categorize(risk_factor, patient)
+            print("{disease_stage}, {risk_factor} -> {category}".format(disease_stage = disease_stage.__class__.__name__,
+                                                                        risk_factor = risk_factor,
+                                                                        category = category))
 
 if __name__ == '__main__':
     test()
