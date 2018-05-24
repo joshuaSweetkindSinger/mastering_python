@@ -50,8 +50,6 @@ class DiseaseStageBase:
 # =============================================================================
 #                     Heart Attack Stage A
 # =============================================================================
-# For the purposes of this demo, we initially define the disease-stage class as empty,
-# because it receives its functionality through the use of the @categorizer decorator.
 class HeartAttackStageA(DiseaseStageBase):
     def __init__(self):
         super().__init__()
