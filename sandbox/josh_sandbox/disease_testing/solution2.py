@@ -114,15 +114,15 @@ class StrokeStageA(DiseaseStageBase):
     pass
 
 @categorizer(StrokeStageA, 'age')
-def _categorize_age(self, patient):
+def _(self, patient):
     return 0 if patient.age < 50 else 1
 
 @categorizer(StrokeStageA, 'blood_pressure')
-def _categorize_blood_pressure(self, patient):
+def _(self, patient):
     return 0 if patient.systolic_blood_pressure < 120 else 1
 
 @categorizer(StrokeStageA, 'cholesterol')
-def _categorize_cholesterol(self, patient):
+def _(self, patient):
     return 0 if patient.cholesterol < 200 else 1
 
 
@@ -133,11 +133,11 @@ class DiabetesStageA(DiseaseStageBase):
     pass
 
 @categorizer(DiabetesStageA, 'fasting_blood_sugar')
-def _categorize_fasting_blood_sugar(self, patient):
+def _(self, patient):
     return 0 if patient.fasting_blood_sugar < 100 else 1
 
 @categorizer(DiabetesStageA, 'blood_pressure')
-def _categorize_blood_pressure(self, patient):
+def _(self, patient):
     return 0 if patient.systolic_blood_pressure < 150 else 1
 
 
