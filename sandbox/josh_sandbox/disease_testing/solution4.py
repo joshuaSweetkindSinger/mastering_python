@@ -2,9 +2,14 @@
 This file defines prototype code for multi-dispatch in the context of testing
 a patient for multiple diseases.
 
-This solution caches the categorization methods in a dict as in Solution3. As
-in Solution3, they can have any names and need not follow a naming convention.
-This solution provides more flexibility and less manual maintenance work than Solution3.
+This solution is an enhancement of Solution 3. It supplies a decorator that automatically
+marks the methods that are categorizers, which methods can be given any name at all.
+
+The core code also ensures that all categorizer methods are automatically installed on
+the categorizer_dict of the disease-stage object that defines them, so that client
+code does not have to explicitly do this. Further, it guarantees that subclassing a disease-stage
+class works correctly. If IschemicStrokeStageA is a subclass of StrokeStageA, then it automatically
+inherits and installs all of the categorizers of its class parent.
 """
 # =============================================================================
 #                     Base Classes
@@ -14,12 +19,14 @@ class Patient:
                  age,
                  systolic_blood_pressure,
                  fasting_blood_sugar,
-                 cholesterol
+                 cholesterol,
+                 blood_viscosity
                  ):
         self.age = age
         self.systolic_blood_pressure = systolic_blood_pressure
         self.fasting_blood_sugar = fasting_blood_sugar
         self.cholesterol = cholesterol
+        self.blood_viscosity = blood_viscosity
 
 # =============================================================================
 #                     Categorizer Helper Functions
@@ -51,45 +58,33 @@ def categorizer_bound_method(f, disease_stage):
     """
     return getattr(disease_stage, f.__name__)
 
+# =============================================================================
+#                     Class DiseaseStageBase
+# =============================================================================
 
 class DiseaseStageBase:
     def __init__(self):
         self._categorizer_dict = {} # Maps risk factor names to bound methods
-        self.install_categorizers() # Install all categorizers defined on our immediate class parent.
+        self._install_categorizers()
 
 
-    def install_categorizers(self, cls = None):
+    def _install_categorizers(self):
         """
-        Install onto ourselves all methods that have been decorated as categorizers
-        inside the class definition for cls.
-
-        The default cls is to use the immediate class parent of self.
-
-        self must be a direct or indirect instance of cls. If it is not, an error is raised.
+        Install onto ourselves all methods that have been decorated as categorizers.
         :return: self
         """
-        for f in self._categorizers(cls):
+        for f in self._categorizers():
             self.install_categorizer(f)
 
 
-    def _categorizers(self, cls = None):
+    def _categorizers(self):
         """
-        Return an iterable over all the categorizer objects defined on class cls.
-
-        The default cls is to use the immediate class parent of self.
-
-        self must be a direct or indirect instance of cls. If it is not, an error is raised.
+        Return an iterable over all the categorizer functions on self.
         """
-        # If cls not specified, make it be our immediate class parent
-        if cls is None:
-            cls = self.__class__
-
-        # Validate that self is a descendant of cls
-        assert isinstance(self, cls)
-
-        # Loop through all attributes of cls, checking for those that are categorizer methods.
+        # Loop through all our attributes, checking for those that are categorizer methods.
         # If we find a categorizer method, yield it.
-        for attribute_value in cls.__dict__.values():
+        for attribute_name in dir(self):
+            attribute_value = getattr(self, attribute_name)
             if is_categorizer(attribute_value):
                 yield attribute_value
 
@@ -161,7 +156,7 @@ def categorizer(risk_factor):
     return decorator
 
 # =============================================================================
-#                     Heart Attack Stage A
+#                     Stroke Stage A
 # =============================================================================
 class StrokeStageA(DiseaseStageBase):
     @categorizer('age')
@@ -175,6 +170,18 @@ class StrokeStageA(DiseaseStageBase):
     @categorizer('cholesterol')
     def _ctg_cholesterol(self, patient):
         return 0 if patient.cholesterol < 200 else 1
+
+
+class IschemicStrokeStageA(StrokeStageA):
+    @categorizer('blood_viscosity')
+    def _cat_blood_viscosity(self, patient):
+        return 0 if patient.blood_viscosity < 2.7 else 1
+
+
+class HemorrhagicStrokeStageA(StrokeStageA):
+    @categorizer('blood_pressure')
+    def _ctg_blood_pressure(self, patient):
+        return 0 if patient.systolic_blood_pressure < 170 else 1
 
 # =============================================================================
 #                     Diabetes Stage A
@@ -192,9 +199,10 @@ class DiabetesStageA(DiseaseStageBase):
 def test():
     patient = Patient(age = 40,
                       systolic_blood_pressure = 130,
+                      blood_viscosity = 2.8,
                       fasting_blood_sugar = 90,
                       cholesterol = 210)
-    disease_stages = [StrokeStageA(), DiabetesStageA()]
+    disease_stages = [StrokeStageA(), IschemicStrokeStageA(), HemorrhagicStrokeStageA(), DiabetesStageA()]
 
     for disease_stage in disease_stages:
         print()

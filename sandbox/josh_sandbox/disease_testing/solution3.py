@@ -67,7 +67,7 @@ class DiseaseStageBase:
 
 
 # =============================================================================
-#                     Heart Attack Stage A
+#                     Stroke Stage A
 # =============================================================================
 class StrokeStageA(DiseaseStageBase):
     def __init__(self):
