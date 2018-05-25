@@ -147,8 +147,8 @@ def test():
 
     for disease_stage in disease_stages:
         print()
-        for risk_factor in disease_stage.risk_factors:
-            category = disease_stage.categorize(risk_factor, patient)
+        for risk_factor, categorizer in disease_stage.categorizers:
+            category = categorizer(patient)
             print("{disease_stage}, {risk_factor} -> {category}".format(disease_stage = disease_stage.__class__.__name__,
                                                                         risk_factor = risk_factor,
                                                                         category = category))
