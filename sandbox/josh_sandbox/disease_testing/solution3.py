@@ -24,32 +24,32 @@ class Patient:
 
 class DiseaseStageBase:
     def __init__(self):
-        self._categorizer_dict = {} # Map category names to bound methods
+        self._categorizer_dict = {} # Map risk factor names to bound methods
 
 
-    def set_categorizer(self, category_name, m):
+    def set_categorizer(self, risk_factor, m):
         """
         Set the bound method m to be the categorization method
-        for the category named category_name.
-        :param category_name: The name of the category, e.g. 'age', 'blood_pressure'
+        for the risk factor named risk_factor.
+        :param risk_factor: The name of the risk factor, e.g. 'age', 'blood_pressure'
         :param m: The method to be added.
         :return: m
         """
-        self._categorizer_dict[category_name] = m
+        self._categorizer_dict[risk_factor] = m
         return m
 
     # This method is not needed by the implementation, but I add it for completeness.
-    def get_categorizer(self, category_name):
+    def get_categorizer(self, risk_factor):
         """
-        Return the method that categorizes the category named category_name for ourselves.
-        :param category_name: A category name, e.g. 'age', 'blood_pressure'
+        Return the method that categorizes the risk factor named risk_factor for ourselves.
+        :param risk_factor: A risk factor, e.g. 'age', 'blood_pressure'
         :return: the method that should be used for categorization.
         """
-        return self._categorizer_dict[category_name]
+        return self._categorizer_dict[risk_factor]
 
     # This method is not needed by the implementation, but I add it for completeness.
-    def categorize(self, category_name, patient):
-        return self.get_categorizer(category_name)(patient)
+    def categorize(self, risk_factor, patient):
+        return self.get_categorizer(risk_factor)(patient)
 
     # This method is not needed by the implementation, but I add it for completeness.
     @property

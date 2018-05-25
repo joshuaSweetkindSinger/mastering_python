@@ -7,7 +7,7 @@ of handling the naming convention for categorization methods, hiding that "under
 of a decorator function.
 
 Categorization methods are still methods that follow a special naming convention. In this
-case, a categorization method for category name 'age' has the name _categorize_age(patient).
+case, a categorization method for risk factor 'age' has the name _categorize_age().
 """
 # =============================================================================
 #                     Base Classes
@@ -26,6 +26,20 @@ class Patient:
 
 
 class DiseaseStageBase:
+    @staticmethod
+    def get_categorization_method_name(risk_factor):
+        return '_categorize_' + risk_factor
+
+
+    def get_categorizer(self, risk_factor):
+        """
+        Return the method that categorizes the risk factor named risk_factor for ourselves.
+        :param risk_factor: A risk factor name, e.g. 'age', 'blood_pressure'
+        :return: the method that should be used for categorization.
+        """
+        return getattr(self, self.get_categorization_method_name(risk_factor))
+
+
     @classmethod
     def set_categorizer(cls, risk_factor, f):
         """
@@ -49,25 +63,19 @@ class DiseaseStageBase:
         return cls
 
 
-    @staticmethod
-    def get_categorization_method_name(risk_factor):
-        return '_categorize_' + risk_factor
-
-
-    def get_categorizer(self, risk_factor):
-        """
-        Return the method that categorizes the risk factor named risk_factor for ourselves.
-        :param risk_factor: A risk factor name, e.g. 'age', 'blood_pressure'
-        :return: the method that should be used for categorization.
-        """
-        return getattr(self, self.get_categorization_method_name(risk_factor))
-
-
-    # This is the generic method that will handle categorization
-    # for all subclasses.
+    # This method is not needed by the implementation, but I add it for completeness.
     def categorize(self, risk_factor, patient):
         return self.get_categorizer(risk_factor)(patient)
 
+
+    @property
+    def categorizers(self):
+        """
+        Return an iterator over the (risk_factor, categorizer) pairs we define.
+        :return:
+        """
+        for risk_factor in self.risk_factors:
+            yield risk_factor, self.get_categorizer(risk_factor)
 # =============================================================================
 #                     Decorator
 # =============================================================================
@@ -75,7 +83,7 @@ class DiseaseStageBase:
 def categorizer(cls, risk_factor):
     """
     This is a special-purpose decorator generator for subclasses of DiseaseStageBase.
-    Declare the decorated function to be a categorization method for the specified class and category name.
+    Declare the decorated function to be a categorization method for the specified class and risk factor.
     :param cls: The class to which the function should be added as a categorization method
     :param risk_factor: the name of the risk factor to which this method applies.
     :return: a dynamically generated decorator that adds f to the set of categorization methods.
@@ -89,7 +97,7 @@ def categorizer(cls, risk_factor):
         :param f: The function to be decorated. In this case, it is a categorization method.
         :return: None, but, as a side effect, add f to the set of categorization methods.
         """
-        cls.set_categorizer(risk_factor, f) # Add f as the categorizer for (cls, category_name)
+        cls.set_categorizer(risk_factor, f) # Add f as the categorizer for (cls, risk_factor)
         return None # Render useless the symbol to which the original function definition f was bound.
 
     return decorator

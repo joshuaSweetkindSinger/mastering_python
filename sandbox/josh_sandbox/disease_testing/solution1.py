@@ -3,7 +3,7 @@ This file defines prototype code for multi-dispatch in the context of testing
 a patient for multiple diseases.
 
 The solution employed in this file takes advantage of special knowledge that
-categorization methods are all named _categorize_<category_name>, e.g., _categorize_age(),
+categorization methods are all named _categorize_<risk_factor>, e.g., _categorize_age(),
 and dynamically builds up the method to call as a string.
 """
 class Patient:
@@ -20,22 +20,32 @@ class Patient:
 
 
 class DiseaseStageBase:
-    @classmethod
-    def get_categorization_method_name(cls, category_name):
-        return '_categorize_' + category_name
+    risk_factors = set()  # Empty set of risk factors for base class
 
-    def get_categorizer(self, category_name):
+    @classmethod
+    def get_categorization_method_name(cls, risk_factor):
+        return '_categorize_' + risk_factor
+
+    def get_categorizer(self, risk_factor):
         """
-        Return the method that categorizes the category named category_name for ourselves.
-        :param category_name: A category name, e.g. 'age', 'blood_pressure'
+        Return the method that categorizes the risk factor named risk_factor for ourselves.
+        :param risk_factor: A risk factor, e.g. 'age', 'blood_pressure'
         :return: the method that should be used for categorization.
         """
-        return getattr(self, self.get_categorization_method_name(category_name))
+        return getattr(self, self.get_categorization_method_name(risk_factor))
 
-    # This is the generic method that will handle categorization
-    # for all subclasses.
-    def categorize(self, category_name, patient):
-        return self.get_categorizer(category_name)(patient)
+    # This method is not needed by the implementation, but I add it for completeness.
+    def categorize(self, risk_factor, patient):
+        return self.get_categorizer(risk_factor)(patient)
+
+    @property
+    def categorizers(self):
+        """
+        Return an iterator over the (risk_factor, categorizer) pairs we define.
+        :return:
+        """
+        for risk_factor in self.risk_factors:
+            yield risk_factor, self.get_categorizer(risk_factor)
 
 
 class StrokeStageA(DiseaseStageBase):
@@ -70,11 +80,12 @@ def test():
 
     for disease_stage in disease_stages:
         print()
-        for risk_factor in disease_stage.risk_factors:
-            category = disease_stage.categorize(risk_factor, patient)
+        for risk_factor, categorizer in disease_stage.categorizers:
+            category = categorizer(patient)
             print("{disease_stage}, {risk_factor} -> {category}".format(disease_stage = disease_stage.__class__.__name__,
                                                                         risk_factor = risk_factor,
                                                                         category = category))
+
 
 if __name__ == '__main__':
     test()
