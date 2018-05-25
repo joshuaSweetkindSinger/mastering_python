@@ -68,43 +68,6 @@ class DiseaseStageBase:
         self._install_categorizers()
 
 
-    def _install_categorizers(self):
-        """
-        Install onto ourselves all methods that have been decorated as categorizers.
-        :return: self
-        """
-        for risk_factor, bound_method in self._get_uninstalled_categorizers():
-            self.install_categorizer(risk_factor, bound_method)
-
-
-    def _get_uninstalled_categorizers(self):
-        """
-        Return an iterable over all (risk_factor, bound_method) categorizers defined on self.
-        """
-        # Loop through all our attributes, checking for those that are categorizer methods.
-        # If we find a categorizer, yield its (risk_factor, bound_method) pair.
-        for attribute_name in dir(self):
-            f = getattr(self, attribute_name) # Note that f might not be a function. It could be a plain value.
-            if is_categorizer(f):
-                yield categorizer_risk_factor(f), categorizer_bound_method(f, self)
-
-
-    def install_categorizer(self, risk_factor, bound_method):
-        """
-        Install bound_method as a categorizer for risk_factor on self.
-
-        Doing so means that self.categorize(risk_factor, patient) will work.
-
-        Further, looping through all categorizers via the iterable self.categorizers
-        will yield this (risk_factor, bound_method) pair as one of its return values.
-        :param risk_factor: a string, the name of a risk fator
-        :param bound_method: a bound method of self that functions as a categorization method.
-        :return: self
-        """
-        self._categorizer_dict[risk_factor] = bound_method
-        return self
-
-
     # This method is not needed by the implementation, but I add it for completeness.
     def get_categorizer(self, risk_factor):
         """
@@ -135,6 +98,48 @@ class DiseaseStageBase:
         for risk_factor, method in self._categorizer_dict.items():
             yield risk_factor, method
 
+
+    def _install_categorizers(self):
+        """
+        Install onto ourselves all methods that have been decorated as categorizers.
+        :return: self
+        """
+        for risk_factor, bound_method in self._get_defined_categorizers():
+            self._install_categorizer(risk_factor, bound_method)
+
+
+    def _get_defined_categorizers(self):
+        """
+        Return an iterable over all (risk_factor, bound_method) categorizers defined on self.
+
+        This is called as part of the installation process. This method finds the categorizers that
+        have been defined, prior to their being installed on our _categorizer_dict.
+        """
+        # Loop through all our attributes, checking for those that are categorizer methods.
+        # If we find a categorizer, yield its (risk_factor, bound_method) pair.
+        for attribute_name in dir(self):
+            f = getattr(self, attribute_name) # Note that f might not be a function. It could be a plain value.
+            if is_categorizer(f):
+                yield categorizer_risk_factor(f), categorizer_bound_method(f, self)
+
+
+    def _install_categorizer(self, risk_factor, bound_method):
+        """
+        Install bound_method as a categorizer for risk_factor on self.
+
+        Doing so means that self.categorize(risk_factor, patient) will work.
+
+        Further, looping through all categorizers via the iterable self.categorizers
+        will yield (risk_factor, bound_method) as one of its return values.
+
+        :param risk_factor: a string, the name of a risk fator
+        :param bound_method: a bound method of self that functions as a categorization method.
+        :return: self
+        """
+        self._categorizer_dict[risk_factor] = bound_method
+        return self
+
+
 # =============================================================================
 #                     Decorator
 # =============================================================================
@@ -146,10 +151,11 @@ def categorizer(risk_factor):
     """
     def decorator(f):
         """
-        Wrap f inside a callable Categorizer object that knows for which risk-factor
-        it is being defined.
+        Set the risk factor for f so that we can determine later that f is actually
+        a categorizer. This decorator does not actually wrap f or alter its behavior.
+        It just flags it as a categorizer.
         :param f:
-        :return: a Categorizer object
+        :return: f, with the risk factor added to it as an attribute.
         """
         categorizer_set_risk_factor(f, risk_factor)
         return f
