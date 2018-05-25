@@ -89,7 +89,10 @@ def categorizer(cls, risk_factor):
     :return: a dynamically generated decorator that adds f to the set of categorization methods.
              It doesn't wrap the decorated function but simply returns None.
              The name given to the original function will still be in the namespace, but its value will be None; it
-             will not be a valid executable function.
+             will not be a valid executable function. That is why, in the use cases below, all the decorated functions
+             are simply named '_'. We could give them any name at all and it wouldn't matter (unless we gave them
+             the name of an existing function of variable, in which case that would bash the function or variable
+             with the value None).
     """
     def decorator(f):
         """
