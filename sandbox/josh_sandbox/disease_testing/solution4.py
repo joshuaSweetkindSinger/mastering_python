@@ -12,7 +12,7 @@ class works correctly. If IschemicStrokeStageA is a subclass of StrokeStageA, th
 inherits and installs all of the categorizers of its class parent.
 """
 # =============================================================================
-#                     Base Classes
+#                     Patient Class
 # =============================================================================
 class Patient:
     def __init__(self,
@@ -32,9 +32,10 @@ class Patient:
 #                     Categorizer Helper Functions
 # =============================================================================
 # A categorizer is a function defined within a class (unbound method) that has
-# been decoratored with the @categorizer decorator. Implementation-wise, this means
+# been decorated with the @categorizer decorator. Implementation-wise, this means
 # the decorator has installed a _risk_factor attribute on the function object.
-#    The functions below are helper functions to deal with categorizers.
+
+# The functions below are helper functions to deal with categorizers.
 
 def is_categorizer(f):
     return callable(f) and hasattr(f, '_risk_factor')
@@ -203,6 +204,9 @@ class DiabetesStageA(DiseaseStageBase):
         return 0 if patient.systolic_blood_pressure < 150 else 1
 
 
+# =============================================================================
+#                     Test
+# =============================================================================
 def test():
     patient = Patient(age = 40,
                       systolic_blood_pressure = 130,
