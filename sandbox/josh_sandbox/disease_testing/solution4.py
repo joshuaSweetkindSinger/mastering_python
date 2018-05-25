@@ -73,39 +73,40 @@ class DiseaseStageBase:
         Install onto ourselves all methods that have been decorated as categorizers.
         :return: self
         """
-        for f in self._categorizers():
-            self.install_categorizer(f)
+        for risk_factor, bound_method in self._get_uninstalled_categorizers():
+            self.install_categorizer(risk_factor, bound_method)
 
 
-    def _categorizers(self):
+    def _get_uninstalled_categorizers(self):
         """
-        Return an iterable over all the categorizer functions on self.
+        Return an iterable over all (risk_factor, bound_method) categorizers defined on self.
         """
         # Loop through all our attributes, checking for those that are categorizer methods.
-        # If we find a categorizer method, yield it.
+        # If we find a categorizer, yield its (risk_factor, bound_method) pair.
         for attribute_name in dir(self):
-            attribute_value = getattr(self, attribute_name)
-            if is_categorizer(attribute_value):
-                yield attribute_value
+            f = getattr(self, attribute_name) # Note that f might not be a function. It could be a plain value.
+            if is_categorizer(f):
+                yield categorizer_risk_factor(f), categorizer_bound_method(f, self)
 
 
-    def install_categorizer(self, f):
+    def install_categorizer(self, risk_factor, bound_method):
         """
-        Install f as a categorizer for self.
+        Install bound_method as a categorizer for risk_factor on self.
 
         Doing so means that self.categorize(risk_factor, patient) will work.
 
         Further, looping through all categorizers via the iterable self.categorizers
-        will yield the (risk_factor, bound_method) pair associated with f.
-        :param f: an unbound method that is a categorizer
+        will yield this (risk_factor, bound_method) pair as one of its return values.
+        :param risk_factor: a string, the name of a risk fator
+        :param bound_method: a bound method of self that functions as a categorization method.
         :return: self
         """
-        self._categorizer_dict[categorizer_risk_factor(f)] = categorizer_bound_method(f, self)
+        self._categorizer_dict[risk_factor] = bound_method
         return self
 
 
     # This method is not needed by the implementation, but I add it for completeness.
-    def get_categorizer_method(self, risk_factor):
+    def get_categorizer(self, risk_factor):
         """
         Return the method that categorizes the risk factor named risk_factor for ourselves.
         :param risk_factor: A risk factor, e.g. 'age', 'blood_pressure'
@@ -116,7 +117,7 @@ class DiseaseStageBase:
 
     # This method is not needed by the implementation, but I add it for completeness.
     def categorize(self, risk_factor, patient):
-        return self.get_categorizer_method(risk_factor)(patient)
+        return self.get_categorizer(risk_factor)(patient)
 
 
     # This method is not needed by the implementation, but I add it for completeness.
@@ -126,9 +127,9 @@ class DiseaseStageBase:
 
 
     @property
-    def categorizer_methods(self):
+    def categorizers(self):
         """
-        Return an iterator over the (risk_factor, method) pairs we define.
+        Return an iterator over the installed (risk_factor, method) categorizers we defined.
         :return:
         """
         for risk_factor, method in self._categorizer_dict.items():
@@ -206,7 +207,7 @@ def test():
 
     for disease_stage in disease_stages:
         print()
-        for risk_factor, method in disease_stage.categorizer_methods:
+        for risk_factor, method in disease_stage.categorizers:
             category = method(patient)
             print("{disease_stage}, {risk_factor} -> {category}".format(disease_stage = disease_stage.__class__.__name__,
                                                                         risk_factor = risk_factor,
