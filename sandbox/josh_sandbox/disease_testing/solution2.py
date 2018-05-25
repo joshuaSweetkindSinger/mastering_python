@@ -105,8 +105,11 @@ def categorizer(cls, risk_factor):
 # =============================================================================
 #                     Stroke Stage A
 # =============================================================================
-# For the purposes of this demo, we initially define the disease-stage class as empty,
-# because it receives its functionality through the use of the @categorizer decorator.
+# The instantiable disease-stage classes get defined *without* their categorizer methods.
+# Those are added afterwards via the decorator. Since this demo only illustrates the categorizer
+# method definitions, these particular disease-stage classes have empty definitions in this implementation.
+# In real-life, they would not be empty, because they would define other methods that are not categorizers.
+
 class StrokeStageA(DiseaseStageBase):
     pass
 
