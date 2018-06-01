@@ -37,14 +37,7 @@ class Patient:
 
 # The functions below are helper functions to deal with categorizers.
 
-def is_categorizer(f):
-    return callable(f) and hasattr(f, '_risk_factor')
 
-def categorizer_risk_factor(f):
-    return f._risk_factor
-
-def categorizer_set_risk_factor(f, risk_factor):
-    f._risk_factor = risk_factor
 
 def categorizer_bound_method(f, disease_stage):
     """
@@ -120,8 +113,8 @@ class DiseaseStageBase:
         # If we find a categorizer, yield its (risk_factor, bound_method) pair.
         for attribute_name in dir(self):
             f = getattr(self, attribute_name) # Note that f might not be a function. It could be a plain value.
-            if is_categorizer(f):
-                yield categorizer_risk_factor(f), categorizer_bound_method(f, self)
+            if self._is_categorizer(f):
+                yield self._get_risk_factor_for_categorizer(f), f
 
 
     def _install_categorizer(self, risk_factor, bound_method):
@@ -139,6 +132,18 @@ class DiseaseStageBase:
         """
         self._categorizer_dict[risk_factor] = bound_method
         return self
+
+    @staticmethod
+    def _is_categorizer(f):
+        return callable(f) and hasattr(f, '_risk_factor')
+
+    @staticmethod
+    def _get_risk_factor_for_categorizer(f):
+        return f._risk_factor
+
+    @staticmethod
+    def set_risk_factor_for_categorizer(f, risk_factor):
+        f._risk_factor = risk_factor
 
 
 # =============================================================================
@@ -158,7 +163,7 @@ def categorizer(risk_factor):
         :param f:
         :return: f, with the risk factor added to it as an attribute.
         """
-        categorizer_set_risk_factor(f, risk_factor)
+        DiseaseStageBase.set_risk_factor_for_categorizer(f, risk_factor)
         return f
 
     return decorator
