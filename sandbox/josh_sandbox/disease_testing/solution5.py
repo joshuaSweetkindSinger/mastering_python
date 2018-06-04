@@ -20,7 +20,8 @@ from sandbox.josh_sandbox.disease_testing.common import test
 # =============================================================================
 
 class DiseaseStageBase:
-    _categorizer_dict = {}
+    _categorizer_dict = {} # Maps risk factors to the names of methods that implement their associated categorizers.
+                           # Example: 'blood_pressure' -> '_categorize_bp'
 
     def __init_subclass__(cls, **kwargs):
         """
@@ -28,6 +29,9 @@ class DiseaseStageBase:
         :return: self
         """
         cls._categorizer_dict = cls._categorizer_dict.copy() # Copy the dict from our parent.
+                                                             # This is important; otherwise, the parent gets polluted with its
+                                                             # childrens' risk factors. By copying, the child always gets everything
+                                                             # already defined on the parent, which is correct inheritance behavior.
 
         for risk_factor, method_name in cls._get_defined_categorizers():
             cls._categorizer_dict[risk_factor] = method_name
@@ -36,7 +40,7 @@ class DiseaseStageBase:
     # This method is not needed by the implementation, but I add it for completeness.
     def get_categorizer(self, risk_factor):
         """
-        Return the bound method that categorizes the risk factor named risk_factor for ourselves.
+        Return the bound method that categorizes the risk factor named risk_factor.
         :param risk_factor: A risk factor, e.g. 'age', 'blood_pressure'
         :return: the bound method that should be used for categorization.
         """
@@ -57,7 +61,7 @@ class DiseaseStageBase:
     @property
     def categorizers(self):
         """
-        Return an iterator over the installed (risk_factor, bound_method) categorizers we defined.
+        Return an iterator over the installed (risk_factor, method_name) categorizers our class defines.
         :return:
         """
         for risk_factor, method_name in self._categorizer_dict.items():
@@ -69,7 +73,7 @@ class DiseaseStageBase:
         """
         Return an iterable over all (risk_factor, method_name) categorizers defined on cls.
 
-        This is called as part of the installation process. This method finds the categorizers that
+        This is called as part of the class initialization process. This method finds the categorizers that
         have been defined, prior to their being installed on our _categorizer_dict.
         """
         # Loop through all our attributes, checking for those that are categorizer methods.
