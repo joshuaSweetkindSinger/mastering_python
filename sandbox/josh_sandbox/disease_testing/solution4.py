@@ -28,29 +28,6 @@ class Patient:
         self.cholesterol = cholesterol
         self.blood_viscosity = blood_viscosity
 
-# =============================================================================
-#                     Categorizer Helper Functions
-# =============================================================================
-# A categorizer is a function defined within a class (unbound method) that has
-# been decorated with the @categorizer decorator. Implementation-wise, this means
-# the decorator has installed a _risk_factor attribute on the function object.
-
-# The functions below are helper functions to deal with categorizers.
-
-
-
-def categorizer_bound_method(f, disease_stage):
-    """
-    :return: the bound-method of disease_stage represented by f.
-    :param disease_stage: an instance descendant of DiseaseStageBase
-
-    NOTES: f is just a function. The associated bound method
-    "binds" its self arg, which is a disease-stage instance, so that it only
-    needs to receive the remaining non-self arguments. Python will find the bound method
-    for us using the inheritance mechanism. We just need to ask it to get the method
-    of disease_stage we desire, by supplying its name.
-    """
-    return getattr(disease_stage, f.__name__)
 
 # =============================================================================
 #                     Class DiseaseStageBase
