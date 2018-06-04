@@ -89,9 +89,10 @@ class DiseaseStageBase:
         # Loop through all our attributes, checking for those that are categorizer methods.
         # If we find a categorizer, yield its (risk_factor, bound_method) pair.
         for attribute_name in dir(self):
-            f = getattr(self, attribute_name) # Note that f might not be a function. It could be a plain value.
-            if self._is_categorizer(f):
-                yield self._get_risk_factor_for_categorizer(f), f
+            bound_method = getattr(self, attribute_name) # Note that this might not be a bound-method. It could be a plain value if
+                                                         # attribute_name is not the name of a method.
+            if self._is_categorizer(bound_method):
+                yield self._get_risk_factor_for_categorizer(bound_method), bound_method
 
 
     def _install_categorizer(self, risk_factor, bound_method):
@@ -137,7 +138,7 @@ def categorizer(risk_factor):
         Set the risk factor for f so that we can determine later that f is actually
         a categorizer. This decorator does not actually wrap f or alter its behavior.
         It just flags it as a categorizer.
-        :param f:
+        :param f: a function (not a bound method, since this is being evaluated a class-definition time)
         :return: f, with the risk factor added to it as an attribute.
         """
         DiseaseStageBase.set_risk_factor_for_categorizer(f, risk_factor)
