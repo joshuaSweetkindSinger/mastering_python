@@ -6,20 +6,7 @@ This solution caches the categorization methods in a dict. They can have any nam
 need not follow a naming convention. However, the downside is that each new categorization
 method must be hand-added to the categorization method dictionary.
 """
-# =============================================================================
-#                     Base Classes
-# =============================================================================
-class Patient:
-    def __init__(self,
-                 age,
-                 systolic_blood_pressure,
-                 fasting_blood_sugar,
-                 cholesterol
-                 ):
-        self.age = age
-        self.systolic_blood_pressure = systolic_blood_pressure
-        self.fasting_blood_sugar = fasting_blood_sugar
-        self.cholesterol = cholesterol
+from sandbox.josh_sandbox.disease_testing.common import test
 
 
 class DiseaseStageBase:
@@ -88,6 +75,23 @@ class StrokeStageA(DiseaseStageBase):
     def _ctg_cholesterol(self, patient):
         return 0 if patient.cholesterol < 200 else 1
 
+
+class IschemicStrokeStageA(StrokeStageA):
+    def __init__(self):
+        super().__init__()
+
+        self.set_categorizer('blood_viscosity', self._cat_blood_viscosity)
+
+
+    def _cat_blood_viscosity(self, patient):
+        return 0 if patient.blood_viscosity < 2.7 else 1
+
+
+class HemorrhagicStrokeStageA(StrokeStageA):
+    def _ctg_blood_pressure(self, patient):
+        return 0 if patient.systolic_blood_pressure < 170 else 1
+
+
 # =============================================================================
 #                     Diabetes Stage A
 # =============================================================================
@@ -107,20 +111,5 @@ class DiabetesStageA(DiseaseStageBase):
         return 0 if patient.systolic_blood_pressure < 150 else 1
 
 
-def test():
-    patient = Patient(age = 40,
-                      systolic_blood_pressure = 130,
-                      fasting_blood_sugar = 90,
-                      cholesterol = 210)
-    disease_stages = [StrokeStageA(), DiabetesStageA()]
-
-    for disease_stage in disease_stages:
-        print()
-        for risk_factor, categorizer in disease_stage.categorizers:
-            category = categorizer(patient)
-            print("{disease_stage}, {risk_factor} -> {category}".format(disease_stage = disease_stage.__class__.__name__,
-                                                                        risk_factor = risk_factor,
-                                                                        category = category))
-
 if __name__ == '__main__':
-    test()
+    test([StrokeStageA(), IschemicStrokeStageA(), HemorrhagicStrokeStageA(), DiabetesStageA()])

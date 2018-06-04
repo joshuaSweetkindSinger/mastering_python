@@ -6,18 +6,7 @@ The solution employed in this file takes advantage of special knowledge that
 categorization methods are all named _categorize_<risk_factor>, e.g., _categorize_age(),
 and dynamically builds up the method to call as a string.
 """
-class Patient:
-    def __init__(self,
-                 age,
-                 systolic_blood_pressure,
-                 fasting_blood_sugar,
-                 cholesterol
-                 ):
-        self.age = age
-        self.systolic_blood_pressure = systolic_blood_pressure
-        self.fasting_blood_sugar = fasting_blood_sugar
-        self.cholesterol = cholesterol
-
+from sandbox.josh_sandbox.disease_testing.common import test
 
 class DiseaseStageBase:
     risk_factors = set()  # Empty set of risk factors for base class
@@ -61,6 +50,20 @@ class StrokeStageA(DiseaseStageBase):
         return 0 if patient.cholesterol < 200 else 1
 
 
+class IschemicStrokeStageA(StrokeStageA):
+    risk_factors = {'age', 'blood_pressure', 'cholesterol', 'blood_viscosity'}
+
+    def _categorize_blood_viscosity(self, patient):
+        return 0 if patient.blood_viscosity < 2.7 else 1
+
+
+class HemorrhagicStrokeStageA(StrokeStageA):
+    risk_factors = {'age', 'blood_pressure', 'cholesterol'}
+
+    def _categorize_blood_pressure(self, patient):
+        return 0 if patient.systolic_blood_pressure < 170 else 1
+
+
 class DiabetesStageA(DiseaseStageBase):
     risk_factors = {'fasting_blood_sugar', 'blood_pressure'}
 
@@ -71,21 +74,6 @@ class DiabetesStageA(DiseaseStageBase):
         return 0 if patient.systolic_blood_pressure < 150 else 1
 
 
-def test():
-    patient = Patient(age = 40,
-                      systolic_blood_pressure = 130,
-                      fasting_blood_sugar = 90,
-                      cholesterol = 210)
-    disease_stages = [StrokeStageA(), DiabetesStageA()]
-
-    for disease_stage in disease_stages:
-        print()
-        for risk_factor, categorizer in disease_stage.categorizers:
-            category = categorizer(patient)
-            print("{disease_stage}, {risk_factor} -> {category}".format(disease_stage = disease_stage.__class__.__name__,
-                                                                        risk_factor = risk_factor,
-                                                                        category = category))
-
 
 if __name__ == '__main__':
-    test()
+    test([StrokeStageA(), IschemicStrokeStageA(), HemorrhagicStrokeStageA(), DiabetesStageA()])

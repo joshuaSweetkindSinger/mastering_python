@@ -2,11 +2,12 @@
 This file defines prototype code for multi-dispatch in the context of testing
 a patient for multiple diseases.
 
-This solution is an enhancement of Solution 3. It supplies a decorator that automatically
-marks the methods that are categorizers, which methods can be given any name at all.
+This solution is an enhancement of Solution 4.
+It implements categorizor dispatch at the class level, rather than duplicating the categorizer dispatch
+dictionary for each instance of the same class.
 
-The core code also ensures that all categorizer methods are automatically installed on
-the categorizer_dict of the disease-stage object that defines them, so that client
+The core code ensures that all categorizer methods are automatically installed on
+the categorizer_dict of the disease-stage class that defines them, so that client
 code does not have to explicitly do this. Further, it guarantees that subclassing a disease-stage
 class works correctly. If IschemicStrokeStageA is a subclass of StrokeStageA, then it automatically
 inherits and installs all of the categorizers of its class parent.
@@ -19,19 +20,27 @@ from sandbox.josh_sandbox.disease_testing.common import test
 # =============================================================================
 
 class DiseaseStageBase:
-    def __init__(self):
-        self._categorizer_dict = {} # Maps risk factor names to bound methods
-        self._install_categorizers()
+    _categorizer_dict = {}
+
+    def __init_subclass__(cls, **kwargs):
+        """
+        Install onto ourselves all method names that have been decorated as categorizers.
+        :return: self
+        """
+        cls._categorizer_dict = cls._categorizer_dict.copy() # Copy the dict from our parent.
+
+        for risk_factor, method_name in cls._get_defined_categorizers():
+            cls._categorizer_dict[risk_factor] = method_name
 
 
     # This method is not needed by the implementation, but I add it for completeness.
     def get_categorizer(self, risk_factor):
         """
-        Return the method that categorizes the risk factor named risk_factor for ourselves.
+        Return the bound method that categorizes the risk factor named risk_factor for ourselves.
         :param risk_factor: A risk factor, e.g. 'age', 'blood_pressure'
-        :return: the method that should be used for categorization.
+        :return: the bound method that should be used for categorization.
         """
-        return self._categorizer_dict[risk_factor]
+        return getattr(self, self._categorizer_dict[risk_factor])
 
 
     # This method is not needed by the implementation, but I add it for completeness.
@@ -48,53 +57,29 @@ class DiseaseStageBase:
     @property
     def categorizers(self):
         """
-        Return an iterator over the installed (risk_factor, method) categorizers we defined.
+        Return an iterator over the installed (risk_factor, bound_method) categorizers we defined.
         :return:
         """
-        for risk_factor, method in self._categorizer_dict.items():
-            yield risk_factor, method
+        for risk_factor, method_name in self._categorizer_dict.items():
+            yield risk_factor, getattr(self, method_name)
 
 
-    def _install_categorizers(self):
+    @classmethod
+    def _get_defined_categorizers(cls):
         """
-        Install onto ourselves all methods that have been decorated as categorizers.
-        :return: self
-        """
-        for risk_factor, bound_method in self._get_defined_categorizers():
-            self._install_categorizer(risk_factor, bound_method)
-
-
-    def _get_defined_categorizers(self):
-        """
-        Return an iterable over all (risk_factor, bound_method) categorizers defined on self.
+        Return an iterable over all (risk_factor, method_name) categorizers defined on cls.
 
         This is called as part of the installation process. This method finds the categorizers that
         have been defined, prior to their being installed on our _categorizer_dict.
         """
         # Loop through all our attributes, checking for those that are categorizer methods.
-        # If we find a categorizer, yield its (risk_factor, bound_method) pair.
-        for attribute_name in dir(self):
-            bound_method = getattr(self, attribute_name) # Note that this might not be a bound-method. It could be a plain value if
-                                                         # attribute_name is not the name of a method.
-            if self._is_categorizer(bound_method):
-                yield self._get_risk_factor_for_categorizer(bound_method), bound_method
+        # If we find a categorizer, yield its (risk_factor, method_name) pair.
+        for attribute_name in dir(cls):
+            f = getattr(cls, attribute_name) # Note that this might not be a function. It could be a plain value if
+                                             # attribute_name is not the name of a method.
+            if cls._is_categorizer(f):
+                yield cls._get_risk_factor_for_categorizer(f), attribute_name
 
-
-    def _install_categorizer(self, risk_factor, bound_method):
-        """
-        Install bound_method as a categorizer for risk_factor on self.
-
-        Doing so means that self.categorize(risk_factor, patient) will work.
-
-        Further, looping through all categorizers via the iterable self.categorizers
-        will yield (risk_factor, bound_method) as one of its return values.
-
-        :param risk_factor: a string, the name of a risk fator
-        :param bound_method: a bound method of self that functions as a categorization method.
-        :return: self
-        """
-        self._categorizer_dict[risk_factor] = bound_method
-        return self
 
     @staticmethod
     def _is_categorizer(f):

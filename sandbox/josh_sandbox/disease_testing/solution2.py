@@ -9,23 +9,12 @@ of a decorator function.
 Categorization methods are still methods that follow a special naming convention. In this
 case, a categorization method for risk factor 'age' has the name _categorize_age().
 """
-# =============================================================================
-#                     Base Classes
-# =============================================================================
-class Patient:
-    def __init__(self,
-                 age,
-                 systolic_blood_pressure,
-                 fasting_blood_sugar,
-                 cholesterol
-                 ):
-        self.age = age
-        self.systolic_blood_pressure = systolic_blood_pressure
-        self.fasting_blood_sugar = fasting_blood_sugar
-        self.cholesterol = cholesterol
+from sandbox.josh_sandbox.disease_testing.common import test
 
 
 class DiseaseStageBase:
+    risk_factors = set() # set of risk factors for this disease stage. The set is empty at this base-class level.
+
     @staticmethod
     def get_categorization_method_name(risk_factor):
         return '_categorize_' + risk_factor
@@ -55,8 +44,9 @@ class DiseaseStageBase:
         :return: cls
         """
         # Create an empty risk factors set for this class if the risk factors set does not yet exist
-        if not hasattr(cls, 'risk_factors'):
-            cls.risk_factors = set()
+        if 'risk_factors' not in cls.__dict__:
+            if cls != DiseaseStageBase:
+                cls.risk_factors = cls.risk_factors.copy()
 
         cls.risk_factors.add(risk_factor)
         setattr(cls, cls.get_categorization_method_name(risk_factor), f)
@@ -128,6 +118,21 @@ def _(self, patient):
 def _(self, patient):
     return 0 if patient.cholesterol < 200 else 1
 
+class IschemicStrokeStageA(StrokeStageA):
+    pass
+
+@categorizer(IschemicStrokeStageA, 'blood_viscosity')
+def _(self, patient):
+    return 0 if patient.blood_viscosity < 2.7 else 1
+
+
+class HemorrhagicStrokeStageA(StrokeStageA):
+    pass
+
+@categorizer(HemorrhagicStrokeStageA, 'blood_pressure')
+def _(self, patient):
+    return 0 if patient.systolic_blood_pressure < 170 else 1
+
 
 # =============================================================================
 #                     Diabetes Stage A
@@ -144,20 +149,9 @@ def _(self, patient):
     return 0 if patient.systolic_blood_pressure < 150 else 1
 
 
-def test():
-    patient = Patient(age = 40,
-                      systolic_blood_pressure = 130,
-                      fasting_blood_sugar = 90,
-                      cholesterol = 210)
-    disease_stages = [StrokeStageA(), DiabetesStageA()]
 
-    for disease_stage in disease_stages:
-        print()
-        for risk_factor, categorizer in disease_stage.categorizers:
-            category = categorizer(patient)
-            print("{disease_stage}, {risk_factor} -> {category}".format(disease_stage = disease_stage.__class__.__name__,
-                                                                        risk_factor = risk_factor,
-                                                                        category = category))
-
+# =============================================================================
+#                     Test
+# =============================================================================
 if __name__ == '__main__':
-    test()
+    test([StrokeStageA(), IschemicStrokeStageA(), HemorrhagicStrokeStageA(), DiabetesStageA()])
